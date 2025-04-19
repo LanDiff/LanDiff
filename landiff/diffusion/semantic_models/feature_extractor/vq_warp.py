@@ -14,7 +14,7 @@ from landiff.tokenizer.models.video_titok_vq import VideoVQ
 from landiff.utils import freeze_model as freeze_model_fn
 
 
-class MoonVQWarp(nn.Module):
+class VQWarp(nn.Module):
     def __init__(
         self,
         config_str: str,
@@ -22,7 +22,7 @@ class MoonVQWarp(nn.Module):
         freeze_model=True,
         freeze_encoder=False,
     ):
-        super(MoonVQWarp, self).__init__()
+        super(VQWarp, self).__init__()
 
         self.freeze_model = freeze_model
         self.freeze_encoder = freeze_encoder
@@ -84,7 +84,7 @@ class MoonVQWarp(nn.Module):
         return re_features
 
 
-class VideoMoonVQWrap(MoonVQWarp):
+class VideoVQWrap(VQWarp):
     def forward(
         self, images: Tensor = None, indexs: Tensor = None, features: Tensor = None
     ) -> Tensor:

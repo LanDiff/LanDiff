@@ -58,7 +58,7 @@ model:
             feature_type: video_theia_interpolate
             zero_init_conv_out: true
             semantic_model_config:
-              target: landiff.diffusion.semantic_models.feature_extractor.moon_vq_warp.VideoMoonVQWrap
+              target: landiff.diffusion.semantic_models.feature_extractor.vq_warp.VideoVQWrap
               params:
                 config_str: "landiff.tokenizer.tokenizer_cfg.build_tokenizer"
                 ckpt_path: "ckpts/LanDiff/tokenizer/model.safetensors"
