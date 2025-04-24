@@ -523,9 +523,7 @@ class Semantic1DLM(CondTransformerBase):
             generator = None
 
         last_code = None
-        freqs_cis = self.transformer.rope.get_freqs_cis_by_seqlens(
-            PackedSeqlens([full_len])
-        )
+        freqs_cis = self.transformer.rope.get_freqs_cis_by_seqlens([full_len])
         freqs_cis = einops.rearrange(freqs_cis, "t c -> 1 t c")
         infer_freqs_cis = freqs_cis[:, :prefix_len]
         with KVCacheManager(self):

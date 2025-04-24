@@ -55,7 +55,7 @@ class GPT(nn.Module):
             module.bias.data.zero_()
             module.weight.data.fill_(1.0)
 
-    def forward(self, x, seqlens: PackedSeqlens | None = None, apply_head=True):
+    def forward(self, x, seqlens: list[int] | None = None, apply_head=True):
         """
         Args:
           x: tensor of shape [batch_size, seqlen, hidden_dim],

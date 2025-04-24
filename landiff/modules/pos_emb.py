@@ -5,8 +5,6 @@ import einops
 import torch
 from torch import nn
 
-from .packed_seq import PackedSeqlens
-
 
 def _apply_rope_input_validation(x, freqs_cis):
     assert x.ndim == freqs_cis.ndim + 1, (x.shape, freqs_cis.shape)
@@ -60,9 +58,6 @@ def precompute_freqs_cis(
     )
     freqs = 1.0 / (theta ** (torch.arange(0, dim, 2)[: (dim // 2)].float() / dim))
 
-    # ROPE type-A extention
-    # we choose to use interpolation rather than extrapolation for better position encoding
-    # for scale purposes, t should be a float tensor
     t = torch.arange(end, device=freqs.device).float()
     scale = 1.0 / float(interpolation_factor)
     t *= scale
@@ -70,8 +65,6 @@ def precompute_freqs_cis(
     freqs = torch.outer(t, freqs).float()  # type: ignore
     freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  # complex64
 
-    # Sometimes, we don't need so many rope emb as seq_len is smaller than max_pos_emb
-    # e.g. rope 1M but seqlen 32k, this will cause gpu memory waste
     if max_seq_length < end:
         freqs_cis = freqs_cis[:max_seq_length,].clone()
     return freqs_cis
@@ -85,15 +78,12 @@ class Rope1DPosEmb(nn.Module):
         max_len: int,
         theta_base=10000,
         device="cuda",
-        virtual_padding: int | None = None,
     ):
         """1D rotary position embedding.
 
         Args:
             dim: usually the multi-head attention dimension, should be divisible by 2
             max_len: the maximum sequence length.
-            virtual_padding: when not None, pad every row and col of each image/frame to the size `virtual_padding`, and use the \
-                padded position to calculate freqs_cis. The returned freqs_cis will not include the padded tokens.
         """
         super().__init__()
         self.dim = dim
@@ -101,10 +91,6 @@ class Rope1DPosEmb(nn.Module):
         self.max_len = max_len
         self.theta_base = theta_base
         self.device = device
-        assert virtual_padding is None or (
-            isinstance(virtual_padding, int) and virtual_padding > 0
-        ), virtual_padding
-        self.padding = virtual_padding
 
     def extra_repr(self):
         return f"dim={self.dim}, max_len={self.max_len}, theta_base={self.theta_base}"
@@ -121,7 +107,7 @@ class Rope1DPosEmb(nn.Module):
 
     def get_freqs_cis_by_seqlens(
         self,
-        seqlens: PackedSeqlens,
+        seqlens: list[int],
     ) -> torch.Tensor:
         """
         Args:
@@ -129,40 +115,12 @@ class Rope1DPosEmb(nn.Module):
         Return:
             freqs_cis: tensor of shape (sum(seqlens), dim//2)
         """
-        if self.padding is None:
-            assert all(1 <= s <= self.max_len for s in seqlens.lengths()), (
-                seqlens.lengths(),
-                self.max_len,
-            )
-            freqs_cis = torch.cat(
-                [self.precomputed_freqs_cis[:s] for s in seqlens.lengths()], dim=0
-            )
-            return freqs_cis
-        else:
-            cis_idx = []
-            for shp in seqlens.shapes():
-                if len(shp) == 2:
-                    shp = (1,) + shp
-                t, h, w = shp
-                assert max(w, h) <= self.padding, (h, w, self.padding)
-                assert t * self.padding**2 <= self.max_len, (
-                    t,
-                    self.padding,
-                    self.max_len,
-                )
-                idx = 0
-                for _ in range(t):
-                    for _ in range(h):
-                        cis_idx.extend(list(range(idx, idx + w)))
-                        idx += self.padding
-                    idx += (self.padding - h) * self.padding
-                assert idx == t * self.padding**2, (idx, t, self.padding)
-            freqs_cis = self.precomputed_freqs_cis[cis_idx]
-            assert freqs_cis.shape[0] == seqlens.total_seqlen(), (
-                freqs_cis.shape,
-                seqlens.total_seqlen,
-            )
-            return freqs_cis
+        assert all(1 <= s <= self.max_len for s in seqlens), (
+            seqlens,
+            self.max_len,
+        )
+        freqs_cis = torch.cat([self.precomputed_freqs_cis[:s] for s in seqlens], dim=0)
+        return freqs_cis
 
 
 class Rope3DPosEmb(nn.Module):
