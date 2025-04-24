@@ -25,10 +25,6 @@ dependencies = [
     "vector-quantize-pytorch==1.19.2",
     "wandb==0.17.5",
 ]
-[project.optional-dependencies]
-attn = ["flash-attn==2.7.4.post1"]
-[tool.uv]
-no-build-isolation-package = ["flash-attn"]
 
 [[tool.uv.index]]
 name = "pytorch-cu121"
