@@ -172,4 +172,8 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-ckpts
+
+# Ignore everything in ckpts folder
+ckpts/*
+# But don't ignore download.sh
+!ckpts/download.sh
