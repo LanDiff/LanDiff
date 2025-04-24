@@ -10,15 +10,36 @@
 
 ### Installation
 
+#### Using UV (Recommended)
 ```bash
+# Clone the repository
+git clone https://github.com/LanDiff/LanDiff
+cd LanDiff
+# Create environment
+uv sync
+# Install Flash Attention
+export CUDA_HOME=/usr/local/cuda-12.1/
+export PATH=$CUDA_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+uv sync --extra attn
+```
+#### Using Conda
+```bash
+# Clone the repository
+git clone https://github.com/LanDiff/LanDiff
+cd LanDiff
 # Create and activate Conda environment
 conda create -n landiff python=3.10
 conda activate landiff
+pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu121
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Install Flash Attention (specific version)
+# Install Flash Attention
+export CUDA_HOME=/usr/local/cuda-12.1/
+export PATH=$CUDA_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 pip install flash-attn==2.7.4.post1 --no-build-isolation
 ```
 
@@ -42,7 +63,6 @@ ckpts/
 └── LanDiff
     ├── diffusion
     │   ├── 1
-    │   │   ├── mp_rank_00_model_states_origin.pt
     │   │   └── mp_rank_00_model_states.pt
     │   └── latest
     ├── llm
