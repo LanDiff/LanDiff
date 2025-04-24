@@ -92,9 +92,7 @@ class MicroConditioner(nn.Module):
 
     def reset_parameters(self):
         for _, mlp in self.mlps.items():
-            nn.init.zeros_(
-                mlp[2].weight
-            )  # initialize the second linear as 0 so that the micro condition will be 0, so that the at the first step everything is identical (class2img -> text2img or text2img -> text2video)
+            nn.init.zeros_(mlp[2].weight)
             nn.init.zeros_(mlp[2].bias)
         if self.adaln_condition_pooling_mode == "mlp":
             nn.init.zeros_(self.adaln_out[1].weight)  # same as above
@@ -307,11 +305,6 @@ class TextCond(nn.Module):
     def _drop_token_embedding(
         self, embedding, rng, null_embed=None, cfg_drop_prob=None
     ):
-        # TODO: add an option to use only one token for null
-        # token_mask_keep = torch.ones(embed.shape[0], device=self.device).bool()
-        # token_mask_drop = torch.arange(embed.shape[0], device=self.device) == 0  # Only keep the first token of null embedding.
-        # token_mask = torch.where(keep_mask[idx], token_mask_keep, token_mask_drop)
-        # embed = embed[token_mask, :]
         null_embed = self.null_text_embedding if null_embed is None else null_embed
         cfg_drop_prob = self.cfg_drop_prob if cfg_drop_prob is None else cfg_drop_prob
         keep_mask = (
@@ -325,7 +318,6 @@ class TextCond(nn.Module):
             if cfg_drop_prob > 0
             else None
         )
-        # Use torch.where for selection, to ensure identical graph on each GPU.
         return [
             torch.where(keep_mask[idx], embed, null_embed)
             for idx, embed in enumerate(embedding)
@@ -356,7 +348,6 @@ class TextCond(nn.Module):
     def forward_unconditional(
         self, x: list[str]
     ) -> list[torch.FloatTensor] | torch.FloatTensor:
-        """Unconditional forward, with condition removed by cf-guidance."""
         tokenized_text = self.text_encoder.tokenize_padded(x)
         text_embedding = repeat(
             self.null_text_embedding,

@@ -18,7 +18,17 @@ from .inference import get_kvcache_manager
 
 logger = logging.getLogger(__name__)
 
-from flash_attn.flash_attn_interface import flash_attn_varlen_func
+
+FLASH_ATTN_IMPORT_ERROR = """
+Please install flash_attn V2 to use the Flash Attention module.
+""".replace(
+    "\n", " "
+)
+
+try:
+    from flash_attn.flash_attn_interface import flash_attn_varlen_func
+except ImportError:
+    logger.warning(FLASH_ATTN_IMPORT_ERROR)
 
 
 # https://github.com/huggingface/pytorch-image-models/blob/245ad4f41ad23438803c1804763c23a1e447b1ec/timm/layers/drop.py#L137
