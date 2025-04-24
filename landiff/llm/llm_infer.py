@@ -98,7 +98,6 @@ class ArModelInferWrapper(torch.nn.Module):
             top_p=sample_cfg.top_p,
             temperature=sample_cfg.temperature,
             use_gt_first_frame=sample_cfg.use_gt_first_frame,
-            is_accuracy_calculated=False,
             num_frames=sample_cfg.num_frames,
         )
         semantic_token = semantic_token.cpu().reshape(-1)

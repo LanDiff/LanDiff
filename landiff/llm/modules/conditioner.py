@@ -29,15 +29,6 @@ class MicroConditioner(nn.Module):
         fwd_dtype=torch.float32,
         drop_probs: dict[str, float] = {},
     ):
-        """Microcondition will be embedded to `frequency_embedding_size` and then projected to hidden_dim and out_dim with a 2-layer MLP.
-
-        Args:
-            adaln_condition_keys, crossattn_condition_keys: tuple of condition keys to be used for adaln and crossattn respectively.
-            defaults: dict of default values for the keys, if not found in data.
-            adaln_condition_pooling_mode: can be 'sum', 'mean' or 'mlp', use a mlp to pool to adaln_condition from (B, N, D) to (B, D),
-                or 'sum' or 'mean' along the 'N' dimension. TODO 'mlp' mode will be remove in the future.
-            drop_probs: dict of drop probabilities in [0, 1] for each condition key, 0 for no drop, 1 for always drop.
-        """
         super().__init__()
         assert (
             len(adaln_condition_keys) + len(crossattn_condition_keys) > 0
@@ -54,7 +45,6 @@ class MicroConditioner(nn.Module):
                 nn.SiLU(),
                 nn.Linear(hidden_dim, out_dim, bias=True),
             )
-        # logger.info(f'Using micro condition: {all_condition_keys}')
 
         self.frequency_embedding_size = frequency_embedding_size
         self.all_condition_keys = all_condition_keys
@@ -72,7 +62,6 @@ class MicroConditioner(nn.Module):
             ), f"Drop condition key {cond_key} not found in all_condition_keys"
             drop_prob = self.drop_probs[cond_key]
             if drop_prob > 0:
-                # logger.info(f'Using micro condition with drop prob for training: {drop_prob} for condition: {cond_key}')
                 self.null_cond_embeddings[cond_key] = nn.Parameter(
                     torch.randn(frequency_embedding_size)
                     / frequency_embedding_size**0.5
@@ -101,24 +90,12 @@ class MicroConditioner(nn.Module):
     def forward(
         self, x: dict[str, Any], rng: torch.Generator | None = None
     ) -> tuple[torch.Tensor | None, torch.Tensor | None]:
-        """
-        Args:
-            x: batched inputs.
 
-        Note about drop condition:
-            train: conditions are dropped w.r.t self.drop_probs.
-            eval: set x[cond_key] = None to drop condition. If cond_key is not presented in x, will use default condition instead of dropping.
-
-        Returns:
-            Adaln condition tensor of shape (B, out_dim).
-            Crossattn condition tensor of shape (B, num_conditions, out_dim).
-        """
         main_input = x.get("class_id", x.get("caption", x.get("image", x.get("video"))))
         batch_size = len(main_input)
         adaln_conditions, crossattn_conditions = [], []
         for cond_key in self.all_condition_keys:
             if self.training:
-                # TODO: should assert cond_key in x?
                 cond = x.get(cond_key, None)  # (B,)
             else:
                 cond = x.get(cond_key, self.defaults.get(cond_key))
@@ -194,11 +171,6 @@ class MicroConditioner(nn.Module):
 
 
 class TextCond(nn.Module):
-    """Text conditioning module.
-
-    Wrap an existing text encoder with CFG logic,
-    and add an extra projection (which has the same fwd dtype with given text_encoder.)
-    """
 
     def __init__(
         self,
@@ -210,17 +182,6 @@ class TextCond(nn.Module):
         cfg_drop_prob: float = 0.0,
         use_mlp_embeddings: bool = False,
     ):
-        """
-        Args:
-          text_encoder: A text encoder defined in nn/text_encoder.py
-          max_cond_tokens_num: Maximum number of conditional tokens. We use this instead of using tokenizer.model_max_length because sometimes tokenizer.model_max_length by default is equal to 1000000000000000019884624838656 in huggingface, which is too large.
-          embed_dim: Embedded dimension of the conditional tokens.
-          padding: whether to left-pad texts in a batch to the maximum length. If True, forward() will return a tensor of batched encoding.
-            If False, forward() will return a list of encoded texts in different lengths.
-          freeze_encoder: Freeze the text encoder or not, default is True.
-          cfg_drop_prob: classifier-free guidance drop probability.
-          use_mlp_embeddings: use a mlp block as the learnable projection layers, like PixArt.
-        """
         super().__init__()
 
         self.max_cond_tokens_num = max_cond_tokens_num
