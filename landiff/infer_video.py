@@ -1,8 +1,12 @@
+from pathlib import Path
+
+import numpy as np
 import torch
 
 from landiff.diffusion.dif_infer import CogModelInferWrapper, VideoTask
 from landiff.llm.llm_cfg import build_llm
 from landiff.llm.llm_infer import ArModelInferWrapper, ARSampleCfg, CodeTask
+from landiff.utils import save_video_tensor
 
 
 def parse_args():
@@ -48,21 +52,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
-    import os
-    from pathlib import Path
-
-    import numpy as np
-
-    from landiff.utils import save_video_tensor
-
-    args = parse_args()
-    torch.distributed.init_process_group(
-        backend="nccl",
-        init_method="env://",
-    )
-    local_rank = int(os.environ.get("LOCAL_RANK", 0))
-    torch.cuda.set_device(local_rank)
+def llm_infer(args):
     llm_model_cfg = build_llm()
     llm_mode = ArModelInferWrapper(args.llm_ckpt, llm_model_cfg)
     llm_mode = llm_mode.cuda()
@@ -85,7 +75,12 @@ def main():
         semantic_token.cpu().numpy(),
     )
     llm_mode = llm_mode.cpu()
+    torch.cuda.empty_cache()
     semantic_token = semantic_token.cuda()
+    return semantic_token
+
+
+def infer_diffusion(args, semantic_token):
     diffusion_model = CogModelInferWrapper(ckpt_path=args.diffusion_ckpt)
     diffusion_model = diffusion_model.cuda()
     video_task = VideoTask(
@@ -99,6 +94,18 @@ def main():
     video = video_task.result
     save_video_tensor(video, video_task.save_file_name, fps=video_task.fps)
     print(f"save video to {video_task.save_file_name}")
+
+
+def main():
+    import os
+
+    args = parse_args()
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    torch.cuda.set_device(local_rank)
+
+    semantic_token = llm_infer(args)
+
+    infer_diffusion(args, semantic_token)
 
 
 if __name__ == "__main__":

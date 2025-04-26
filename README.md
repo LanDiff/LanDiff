@@ -103,7 +103,7 @@ ckpts
 - Single-GPU inference
 ```bash
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-torchrun --standalone --nproc-per-node=1 landiff/infer_video.py --prompt "A snail with a brown and tan shell is seen crawling on a bed of green moss. The snail's body is grayish-brown, and it has two prominent tentacles extended forward. The environment suggests a natural, outdoor setting with a focus on the snail's movement across the mossy surface."
+python landiff/infer_video.py --prompt "A snail with a brown and tan shell is seen crawling on a bed of green moss. The snail's body is grayish-brown, and it has two prominent tentacles extended forward. The environment suggests a natural, outdoor setting with a focus on the snail's movement across the mossy surface."
 ```
 
 - Code Example
