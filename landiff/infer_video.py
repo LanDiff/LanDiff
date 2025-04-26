@@ -48,6 +48,12 @@ def parse_args():
         default=0.1,
         help="Motion score for the video generation.",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for video generation.",
+    )
 
     return parser.parse_args()
 
@@ -59,7 +65,7 @@ def llm_infer(args):
     code_task = CodeTask(
         save_file_name=f"{args.save_file_name}.npy",
         prompt=args.prompt,
-        seed=42,
+        seed=args.seed,
         sample_cfg=ARSampleCfg(
             temperature=1.0,
             cfg=args.cfg,
@@ -86,7 +92,7 @@ def infer_diffusion(args, semantic_token):
     video_task = VideoTask(
         save_file_name=f"{args.save_file_name}.mp4",
         prompt=args.prompt,
-        seed=42,
+        seed=args.seed,
         fps=8,
         semantic_token=semantic_token,
     )
