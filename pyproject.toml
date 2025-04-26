@@ -27,6 +27,12 @@ dependencies = [
     "wandb==0.17.5",
 ]
 
+# Add this section for optional dependencies
+[project.optional-dependencies]
+gradio = [
+    "gradio==5.27.0",
+]
+
 [[tool.uv.index]]
 name = "pytorch-cu121"
 url = "https://download.pytorch.org/whl/cu121"

@@ -36,6 +36,8 @@ cd LanDiff
 ```bash
 # Create environment
 uv sync
+# Install gradio for run local demo (Optional)
+uv sync --extra gradio
 ```
 #### Using Conda
 ```bash
@@ -46,6 +48,8 @@ pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorc
 
 # Install dependencies
 pip install -r requirements.txt
+# Install gradio for run local demo (Optional)
+pip install gradio==5.27.0
 ```
 
 ## Model Download
