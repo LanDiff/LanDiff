@@ -13,6 +13,7 @@ dependencies = [
     "imageio-ffmpeg==0.6.0",
     "kornia==0.7.3",
     "matplotlib==3.9.2",
+    "modelscope>=1.25.0",
     "omegaconf==2.3.0",
     "pre-commit==3.6.0",
     "pytorch-lightning==2.3.3",
