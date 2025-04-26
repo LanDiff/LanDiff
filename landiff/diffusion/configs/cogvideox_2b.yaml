@@ -76,14 +76,14 @@ model:
           ucg_rate: 0.1
           target: landiff.diffusion.sgm.modules.encoders.modules.FrozenT5Embedder
           params:
-            model_dir: "ckpts/CogVideoX-2b-sat/t5-v1_1-xxl"
+            model_dir: "ckpts/LanDiff/CogVideoX-2b-sat/t5-v1_1-xxl"
             max_length: 226
 
   first_stage_config:
     target: landiff.diffusion.vae_modules.autoencoder.VideoAutoencoderInferenceWrapper
     params:
       cp_size: 1
-      ckpt_path: "ckpts/CogVideoX-2b-sat/vae/3d-vae.pt"
+      ckpt_path: "ckpts/LanDiff/CogVideoX-2b-sat/vae/3d-vae.pt"
       ignore_keys: ["loss"]
 
       loss_config:
