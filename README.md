@@ -146,7 +146,12 @@ video_task: VideoTask = diffusion_model(video_task)
 video = video_task.result
 save_video_tensor(video, video_task.save_file_name, fps=video_task.fps)
 ```
+- Running local gradio
 
+```bash
+export PYTHONPATH=$PYTHONPATH:$(pwd)
+python gradio/main.py
+```
 
 ## Citation
 If you find our work helpful, please cite us.
