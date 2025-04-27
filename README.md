@@ -26,18 +26,9 @@ In this repository, we present **LanDiff**, a novel text-to-video generation fra
 
 ## Quick Demos
 
-<table class="center">
-    <tr>
-    <td><video src="https://github.com/user-attachments/assets/f15c7d1d-254c-48bd-800e-6e180aebb6be" width="100%" controls autoplay loop></video></td>
-    <td><video src="https://github.com/user-attachments/assets/c3e405f3-3dde-4abe-ad66-b3db0d58f5c4" width="100%" controls autoplay loop></video></td>
-    <td><video src="https://github.com/user-attachments/assets/28761df1-8424-43c2-9bd9-f34400b1f2c5" width="100%" controls autoplay loop></video></td>
-    </tr>
-    <tr>
-    <td><video src="https://github.com/user-attachments/assets/08dfc0b9-09da-4b87-ad0e-5686b1320d52" width="100%" controls autoplay loop></video></td>
-    <td><video src="https://github.com/user-attachments/assets/4e4630bc-047d-494e-9486-b3f2f3b20dd7" width="100%" controls autoplay loop></video></td>
-    <td><video src="https://github.com/user-attachments/assets/a63ab652-0cad-4445-9298-16abd00725ad" width="100%" controls autoplay loop></video></td>
-    </tr>
-</table>
+<div align="center">
+<video src="https://github.com/user-attachments/assets/e8ce67d8-bf0e-4625-8d8c-fdd2921b8a26" width="100%" controls autoplay loop></video>
+</div>
 
 ## Quickstart
 
