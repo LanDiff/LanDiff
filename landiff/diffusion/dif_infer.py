@@ -199,52 +199,55 @@ class CogWrapper(torch.nn.Module):
             "num_frames": torch.tensor(T).unsqueeze(0),
         }
 
-        with torch.autocast(device_type="cuda", dtype=self.fwd_dtype):
-            batch, batch_uc = get_batch(
-                get_unique_embedder_keys_from_conditioner(self.model.conditioner),
-                value_dict,
-                num_samples,
-            )
-            for key in batch:
-                if isinstance(batch[key], torch.Tensor):
-                    print(key, batch[key].shape)
-                elif isinstance(batch[key], list):
-                    print(key, [len(l) for l in batch[key]])
-                else:
-                    print(key, batch[key])
-            c, uc = self.model.conditioner.get_unconditional_conditioning(
-                batch,
-                batch_uc=batch_uc,
-                force_uc_zero_embeddings=force_uc_zero_embeddings,
-            )
+        batch, batch_uc = get_batch(
+            get_unique_embedder_keys_from_conditioner(self.model.conditioner),
+            value_dict,
+            num_samples,
+        )
+        for key in batch:
+            if isinstance(batch[key], torch.Tensor):
+                print(key, batch[key].shape)
+            elif isinstance(batch[key], list):
+                print(key, [len(l) for l in batch[key]])
+            else:
+                print(key, batch[key])
+        c, uc = self.model.conditioner.get_unconditional_conditioning(
+            batch,
+            batch_uc=batch_uc,
+            force_uc_zero_embeddings=force_uc_zero_embeddings,
+        )
 
-            for k in c:
-                if not k == "crossattn":
-                    c[k], uc[k] = map(
-                        lambda y: y[k][: math.prod(num_samples)].to("cuda"), (c, uc)
-                    )
+        for k in c:
+            if not k == "crossattn":
+                c[k], uc[k] = map(
+                    lambda y: y[k][: math.prod(num_samples)].to("cuda"), (c, uc)
+                )
 
-            samples_z = sample_func(
-                c,
-                uc=uc,
-                batch_size=1,
-                shape=(T, C, H // F, W // F),
-                # generator=generator,
-                prefix=vae_feature_prefix,
-                mp4=mp4,
-            )
-            recon = self.decode_latent(
-                einops.rearrange(samples_z, "b t c h w -> b c t h w")
-            )
-            samples = _post_process_cog_video(recon)
+        samples_z = sample_func(
+            c,
+            uc=uc,
+            batch_size=1,
+            shape=(T, C, H // F, W // F),
+            # generator=generator,
+            prefix=vae_feature_prefix,
+            mp4=mp4,
+        )
+        recon = self.decode_latent(
+            einops.rearrange(samples_z, "b t c h w -> b c t h w")
+        )
+        samples = _post_process_cog_video(recon)
         output = CogOutput(
             video=samples,
             latent=samples_z,
         )
         return output
 
+    @torch.no_grad()
     def decode_latent(self, latent: torch.Tensor):
+        self.model.to("cpu")
         first_stage_model = self.model.first_stage_model
+        torch.cuda.empty_cache()
+        first_stage_model = first_stage_model.cuda()
         latent = 1.0 / self.model.scale_factor * latent  # shape [b, c, t, h, w]
         T = latent.shape[2]
         # Decode latent serial to save GPU memory
@@ -259,12 +262,11 @@ class CogWrapper(torch.nn.Module):
                 clear_fake_cp_cache = True
             else:
                 clear_fake_cp_cache = False
-            with torch.no_grad():
-                recon = first_stage_model.decode(
-                    latent[:, :, start_frame:end_frame].contiguous(),
-                    clear_fake_cp_cache=clear_fake_cp_cache,
-                )
-            recons.append(recon)
+            recon = first_stage_model.decode(
+                latent[:, :, start_frame:end_frame].contiguous(),
+                clear_fake_cp_cache=clear_fake_cp_cache,
+            )
+            recons.append(recon.cpu())
         recon = torch.cat(recons, dim=2).to(torch.float32)
         return recon
 
