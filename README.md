@@ -1,9 +1,19 @@
-# LanDiff: The Best of Both Worlds: Integrating Language Models and Diffusion Models for Video Generation
+# LanDiff
 
 <p align="center">
     💜 <a href="https://landiff.github.io/"><b>Demo</b></a> &nbsp&nbsp ｜ &nbsp&nbsp🤗 <a href="https://huggingface.co/yinaoxiong/LanDiff">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://www.modelscope.cn/models/yinaoxiong/LanDiff">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2503.04606">Paper</a> &nbsp&nbsp 
 <br>
 
+-----
+
+[**The Best of Both Worlds: Integrating Language Models and Diffusion Models for Video Generation**](https://arxiv.org/abs/2503.04606)
+
+In this repository, we present **LanDiff**, a novel text-to-video generation framework that synergizes the strengths of Language Models and Diffusion Models. **LanDiff** offers these key features:
+
+- 👍 **High Performance**: **LanDiff** (5B) achieves a score of **85.43** on the VBench T2V benchmark, surpassing state-of-the-art open-source models like Hunyuan Video (13B) and demonstrating competitiveness with leading commercial models such as Sora, Kling, and Hailuo. It also achieves SOTA performance among open-source models for long video generation.
+- 👍 **Novel Hybrid Architecture**: **LanDiff** pioneers a **coarse-to-fine** generation pipeline, integrating Language Models (for high-level semantics and temporal coherence) and Diffusion Models (for high-fidelity visual details), effectively combining the advantages of both paradigms.
+- 👍 **Extreme Compression Semantic Tokenizer**: Features an innovative video semantic tokenizer that compresses rich 3D visual features into compact 1D discrete representations using query tokens and frame grouping, achieving an exceptional **~14,000x compression ratio** while preserving crucial semantic information.
+- 👍 **Efficient Long Video Generation**: Implements a **streaming diffusion model** capable of generating long videos chunk-by-chunk, significantly reducing computational requirements and enabling scalable video synthesis.
 
 ## 🔥 Latest News!!
 * Apr 25, 2025: 👋 We've released the inference code and weights of **LanDiff**.
