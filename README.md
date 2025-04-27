@@ -5,20 +5,29 @@
 <br>
 
 
-
-<!-- ## Video Demos
-
-<div align="center">
-  <video src="https://github.com/user-attachments/assets/4aca6063-60bf-4953-bfb7-e265053f49ef" width="70%" poster=""> </video>
-</div> -->
-
 ## 🔥 Latest News!!
 * Apr 25, 2025: 👋 We've released the inference code and weights of **LanDiff**.
 
 ## 📑 Todo List
-- [] Gradio demo
-- [] Diffusers integration
-- [] Training code
+- [x] Gradio demo
+- [ ] Docker image
+- [ ] Diffusers integration
+- [ ] Training code
+
+## Quick Demos
+
+<table class="center">
+    <tr>
+    <td><video src="https://github.com/user-attachments/assets/f15c7d1d-254c-48bd-800e-6e180aebb6be" width="100%" controls autoplay loop></video></td>
+    <td><video src="https://github.com/user-attachments/assets/c3e405f3-3dde-4abe-ad66-b3db0d58f5c4" width="100%" controls autoplay loop></video></td>
+    <td><video src="https://github.com/user-attachments/assets/28761df1-8424-43c2-9bd9-f34400b1f2c5" width="100%" controls autoplay loop></video></td>
+    </tr>
+    <tr>
+    <td><video src="https://github.com/user-attachments/assets/08dfc0b9-09da-4b87-ad0e-5686b1320d52" width="100%" controls autoplay loop></video></td>
+    <td><video src="https://github.com/user-attachments/assets/4e4630bc-047d-494e-9486-b3f2f3b20dd7" width="100%" controls autoplay loop></video></td>
+    <td><video src="https://github.com/user-attachments/assets/a63ab652-0cad-4445-9298-16abd00725ad" width="100%" controls autoplay loop></video></td>
+    </tr>
+</table>
 
 ## Quickstart
 
@@ -152,6 +161,7 @@ save_video_tensor(video, video_task.save_file_name, fps=video_task.fps)
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 python gradio/main.py
 ```
+![webdemo](assets/webdemo.png)
 
 ## Citation
 If you find our work helpful, please cite us.
