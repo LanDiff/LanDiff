@@ -2,7 +2,6 @@ import copy
 
 import fiddle as fdl
 import torch
-import vector_quantize_pytorch
 from fiddle import Config
 from torch import nn
 
@@ -13,7 +12,6 @@ from landiff.llm.modules.text_encoder import FlanT5XXL
 from landiff.llm.modules.tokenizer import SemanticFrozenTokenizer
 from landiff.llm.modules.transformer_blocks import LlamaTransformerBlock
 from landiff.modules.pos_emb import Rope1DPosEmb
-from landiff.tokenizer.modules import blocks
 from landiff.tokenizer.tokenizer_cfg import build_tokenizer
 
 

@@ -1,7 +1,11 @@
 # LanDiff
 
 <p align="center">
-    🎬 <a href="https://landiff.github.io/"><b>Demo Page</b></a> &nbsp&nbsp ｜ &nbsp&nbsp🤗 <a href="https://huggingface.co/yinaoxiong/LanDiff">Hugging Face</a>&nbsp&nbsp | &nbsp&nbsp🤖 <a href="https://www.modelscope.cn/models/yinaoxiong/LanDiff">ModelScope</a>&nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2503.04606">Paper</a> &nbsp&nbsp
+    🎬 <a href="https://landiff.github.io/"><b>Demo Page</b></a> &nbsp&nbsp ｜ 
+    &nbsp&nbsp🤗 <a href="https://huggingface.co/yinaoxiong/LanDiff">Hugging Face</a>&nbsp&nbsp | 
+    &nbsp&nbsp🤖 <a href="https://www.modelscope.cn/models/yinaoxiong/LanDiff">ModelScope</a>&nbsp&nbsp | 
+    &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2503.04606">Paper</a> &nbsp&nbsp
+</p>
 <br>
 
 -----
@@ -16,7 +20,7 @@ In this repository, we present **LanDiff**, a novel text-to-video generation fra
 - 👍 **Efficient Long Video Generation**: Implements a **streaming diffusion model** capable of generating long videos chunk-by-chunk, significantly reducing computational requirements and enabling scalable video synthesis.
 
 ## 🔥 Latest News!!
-* Apr 27, 2025: 👋 We've released the inference code and weights of **LanDiff**.
+* Apr 28, 2025: 👋 We've released the inference code and weights of **LanDiff**.
 
 ## 📑 Todo List
 - [x] Gradio demo
@@ -68,15 +72,37 @@ pip install gradio==5.27.0
 |--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------|
 | LanDiff      | 🤗 [Huggingface](https://huggingface.co/yinaoxiong/LanDiff)               | 🤖 [ModelScope](https://www.modelscope.cn/models/yinaoxiong/LanDiff)
 
-To use LanDiff, you need to download the pre-trained model weights to the `ckpts` directory:
+
+LanDiff provides three methods to configure the model weights location:
+
+### Method 1: Automatic Download (Recommended)
+
+LanDiff includes an automatic download model weights. Upon first import or execution, it automatically checks for model weights. If no local model weights are found, the system will automatically download them from Hugging Face and verify the integrity of the model files:
+
+```python
+import landiff  # First import will automatically check and download model weights
+```
+
+### Method 2: Using Environment Variable (LANDIFF_HOME)
+
+You can specify a custom storage location for model weights by setting the `LANDIFF_HOME` environment variable:
+
+```bash
+export LANDIFF_HOME=/path/to/your/models/LanDiff
+```
+
+### Method 3: Default Workspace Path
+
+By default, LanDiff will look for model weights in the `ckpts/LanDiff` directory relative to the working directory.
+If you prefer to manually download the model weights to the `ckpts` directory:
 
 ```bash
 cd ckpts
-# Download model weights
+# Download model weights from Hugging Face
 huggingface-cli download yinaoxiong/LanDiff --local-dir ./LanDiff
 cd ..
 ```
-or you can also download the model weights from [ModelScope](https://www.modelscope.cn/models/yinaoxiong/LanDiff).
+Alternatively, you can download model weights from [ModelScope](https://www.modelscope.cn/models/yinaoxiong/LanDiff).
 
 ```bash
 cd ckpts
@@ -85,7 +111,20 @@ modelscope download yinaoxiong/LanDiff --local_dir ./LanDiff
 cd ..
 ```
 
-The expected directory structure after downloading the weights should be:
+### Note on Symbolic Links
+
+When using methods 1 or 2, if the model weights are found at a location different from the default workspace path (`ckpts/LanDiff`), the system will automatically create a symbolic link from the workspace path to the actual model location. This ensures consistent access to the model weights.
+
+### Skipping Model Initialization
+
+If you need to skip the automatic model initialization check (for example, when developing or testing parts of the codebase that don't require the model weights), you can set the `LANDIFF_SKIP_INIT` environment variable:
+
+```bash
+export LANDIFF_SKIP_INIT=1  # or "true", "yes", "y", "on"
+```
+
+
+After downloading and initializing the model weights, the directory structure should look like this:
 
 ```
 ckpts
@@ -162,7 +201,9 @@ save_video_tensor(video, video_task.save_file_name, fps=video_task.fps)
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 python gradio/main.py
 ```
-![webdemo](assets/webdemo.png)
+
+
+<img src="https://github.com/user-attachments/assets/32b56ff2-ad97-4747-8f6b-695074dbba6a" alt="webdemo" style="max-width: 100%;">
 
 
 ## License

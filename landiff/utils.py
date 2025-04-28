@@ -1,5 +1,6 @@
 import contextlib
 import hashlib
+import os
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -7,11 +8,207 @@ import einops
 import imageio
 import numpy as np
 import torch
+from huggingface_hub import snapshot_download
 from torch import nn
+from tqdm import tqdm
+
+# Global variable to store model path
+_LANDIFF_MODEL_PATH = None
 
 
 class _FreezeSentinel:
     pass
+
+
+def verify_md5_checksum(root_dir: Path) -> bool:
+    # Get the root path of working directory
+    work_dir = Path(__file__).resolve().parents[1]
+
+    # Checksum file path is fixed as ckpts/CHECKSUM.md5
+    checksum_file = work_dir / "ckpts" / "CHECKSUM.md5"
+    if not checksum_file.exists():
+        raise FileNotFoundError(f"Checksum file does not exist: {checksum_file}")
+
+    # Read checksums
+    checksums = {}
+    with open(checksum_file, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            md5, filepath = line.split("  ", 1)
+            # Remove ./ prefix from path
+            if filepath.startswith("./"):
+                filepath = filepath[2:]
+            checksums[filepath] = md5
+
+    # Verify files
+    all_files_valid = True
+    for rel_path, expected_md5 in tqdm(
+        checksums.items(), desc="Verifying files", unit="files"
+    ):
+        # Calculate actual file location in the model directory
+        file_path = root_dir / rel_path
+
+        if not file_path.exists():
+            print(f"Error: File does not exist: {file_path}")
+            all_files_valid = False
+            break
+
+        # Calculate MD5 with progress bar for large files
+        file_md5 = hashlib.md5()
+        file_size = file_path.stat().st_size
+        # Only show progress bar for files larger than 10MB
+        if file_size > 10 * 1024 * 1024:  # 10MB
+            chunk_size = (
+                4096 * 256
+            )  # Increase chunk size for better performance with large files
+            with open(file_path, "rb") as f:
+                with tqdm(
+                    total=file_size,
+                    unit="B",
+                    unit_scale=True,
+                    desc=f"Checking {rel_path}",
+                    leave=False,
+                ) as pbar:
+                    for chunk in iter(lambda: f.read(chunk_size), b""):
+                        file_md5.update(chunk)
+                        pbar.update(len(chunk))
+        else:
+            # For small files, don't show progress bar
+            with open(file_path, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    file_md5.update(chunk)
+
+        if file_md5.hexdigest() != expected_md5:
+            print(f"Error: File verification failed: {file_path}")
+            print(f"  Expected MD5: {expected_md5}")
+            print(f"  Actual MD5: {file_md5.hexdigest()}")
+            all_files_valid = False
+            break
+
+    return all_files_valid
+
+
+def initialize_landiff_model_path():
+    """Initialize and ensure availability of LanDiff model files
+
+    This function manages the complete setup process for the LanDiff model:
+    1. Locates model path using priorities:
+       - LANDIFF_HOME environment variable
+       - The ckpts/LanDiff path in the working directory
+    2. Downloads the model from Hugging Face if not found locally
+    3. Validates model files using MD5 checksums
+    4. Creates symbolic links for consistent path access
+
+    When a valid model path is found, the function will create a symbolic link from
+    the workspace path (ckpts/LanDiff) to the actual model path if they are different.
+    This ensures that the model can be consistently accessed through the workspace path.
+
+    After the first call, subsequent calls will return the cached path directly.
+
+    Returns:
+        Path: Initialized and validated model files storage path
+
+    Raises:
+        FileExistsError: When workspace_path exists and is not a symlink, to prevent
+                         accidental deletion of user data
+        FileNotFoundError: When checksum file does not exist
+        ValueError: When hash verification of the downloaded model fails
+    """
+    global _LANDIFF_MODEL_PATH
+
+    # If already validated, return directly
+    if _LANDIFF_MODEL_PATH is not None:
+        return _LANDIFF_MODEL_PATH
+
+    # Get root path of working directory
+    root_dir = Path(__file__).resolve().parents[1]
+
+    # Check possible model paths
+    potential_paths = []
+
+    # 1. Check environment variable
+    env_path = os.environ.get("LANDIFF_HOME")
+    if env_path:
+        potential_paths.append(Path(env_path))
+
+    # 2. Check path in the working directory
+    workspace_path = root_dir / "ckpts" / "LanDiff"
+    potential_paths.append(workspace_path)
+
+    # Check if the path exists and validate md5
+    for model_path in potential_paths:
+        if (
+            model_path.exists()
+            and model_path.is_dir()
+            and verify_md5_checksum(model_path)
+        ):
+            _LANDIFF_MODEL_PATH = model_path
+
+            # Create a symbolic link to workspace_path if the model is not already there
+            if model_path != workspace_path:
+                # Check if workspace_path exists and is not a symlink
+                if workspace_path.exists() and not workspace_path.is_symlink():
+                    raise FileExistsError(
+                        f"Workspace path '{workspace_path}' already exists and is not a symbolic link. "
+                        f"Please remove or rename it manually to create a symbolic link to the model path '{model_path}'."
+                    )
+
+                # Remove existing symbolic link if it exists
+                if workspace_path.exists() and workspace_path.is_symlink():
+                    workspace_path.unlink()
+
+                # Create parent directory if it doesn't exist
+                workspace_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Create symbolic link
+                workspace_path.symlink_to(model_path, target_is_directory=True)
+                print(f"Created symbolic link from {workspace_path} to {model_path}")
+
+            return model_path
+
+    # If no valid model path is found, notify the user that the model will be automatically downloaded
+    print(
+        "No valid model path found. Will automatically download LanDiff model from Hugging Face..."
+    )
+
+    # Use snapshot_download to download the entire model repository
+    download_path = Path(snapshot_download(repo_id="yinaoxiong/LanDiff"))
+
+    print(f"Model downloaded to {download_path}, performing hash verification...")
+
+    # Verify the downloaded model with hash checksum
+    if verify_md5_checksum(download_path):
+        print("Model hash verification successful!")
+        _LANDIFF_MODEL_PATH = download_path
+
+        # Create a symbolic link to workspace_path
+        if download_path != workspace_path:
+            # Check if workspace_path exists and is not a symlink
+            if workspace_path.exists() and not workspace_path.is_symlink():
+                raise FileExistsError(
+                    f"Workspace path '{workspace_path}' already exists and is not a symbolic link. "
+                    f"Please remove or rename it manually to create a symbolic link to the downloaded model path '{download_path}'."
+                )
+
+            # Remove existing symbolic link if it exists
+            if workspace_path.exists() and workspace_path.is_symlink():
+                workspace_path.unlink()
+
+            # Create parent directory if it doesn't exist
+            workspace_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Create symbolic link
+            workspace_path.symlink_to(download_path, target_is_directory=True)
+            print(f"Created symbolic link from {workspace_path} to {download_path}")
+        return download_path
+    else:
+        # If verification fails, raise an error
+        raise ValueError(
+            "Hash verification of the downloaded model failed. Please ensure a stable network connection, "
+            "or manually download the model and set the LANDIFF_HOME environment variable."
+        )
 
 
 def freeze_model(
