@@ -90,7 +90,7 @@ def verify_md5_checksum(root_dir: Path) -> bool:
     return all_files_valid
 
 
-def initialize_landiff_model_path():
+def initialize_landiff_model_path(skip_hash_verification=False) -> Path:
     """Initialize and ensure availability of LanDiff model files
 
     This function manages the complete setup process for the LanDiff model:
@@ -106,6 +106,10 @@ def initialize_landiff_model_path():
     This ensures that the model can be consistently accessed through the workspace path.
 
     After the first call, subsequent calls will return the cached path directly.
+
+    Args:
+        skip_hash_verification: If True, skips the MD5 checksum verification.
+                            Useful for faster loading or when checksums are outdated.
 
     Returns:
         Path: Initialized and validated model files storage path
@@ -139,34 +143,32 @@ def initialize_landiff_model_path():
 
     # Check if the path exists and validate md5
     for model_path in potential_paths:
-        if (
-            model_path.exists()
-            and model_path.is_dir()
-            and verify_md5_checksum(model_path)
-        ):
-            _LANDIFF_MODEL_PATH = model_path
+        # Skip hash verification if flag is set
+        if model_path.exists() and model_path.is_dir():
+            if skip_hash_verification or verify_md5_checksum(model_path):
+                _LANDIFF_MODEL_PATH = model_path
 
-            # Create a symbolic link to workspace_path if the model is not already there
-            if model_path != workspace_path:
-                # Check if workspace_path exists and is not a symlink
-                if workspace_path.exists() and not workspace_path.is_symlink():
-                    raise FileExistsError(
-                        f"Workspace path '{workspace_path}' already exists and is not a symbolic link. "
-                        f"Please remove or rename it manually to create a symbolic link to the model path '{model_path}'."
-                    )
+                # Create a symbolic link to workspace_path if the model is not already there
+                if model_path != workspace_path:
+                    # Check if workspace_path exists and is not a symlink
+                    if workspace_path.exists() and not workspace_path.is_symlink():
+                        raise FileExistsError(
+                            f"Workspace path '{workspace_path}' already exists and is not a symbolic link. "
+                            f"Please remove or rename it manually to create a symbolic link to the model path '{model_path}'."
+                        )
 
-                # Remove existing symbolic link if it exists
-                if workspace_path.exists() and workspace_path.is_symlink():
-                    workspace_path.unlink()
+                    # Remove existing symbolic link if it exists
+                    if workspace_path.exists() and workspace_path.is_symlink():
+                        workspace_path.unlink()
 
-                # Create parent directory if it doesn't exist
-                workspace_path.parent.mkdir(parents=True, exist_ok=True)
+                    # Create parent directory if it doesn't exist
+                    workspace_path.parent.mkdir(parents=True, exist_ok=True)
 
-                # Create symbolic link
-                workspace_path.symlink_to(model_path, target_is_directory=True)
-                print(f"Created symbolic link from {workspace_path} to {model_path}")
+                    # Create symbolic link
+                    workspace_path.symlink_to(model_path, target_is_directory=True)
+                    print(f"Created symbolic link from {workspace_path} to {model_path}")
 
-            return model_path
+                return model_path
 
     # If no valid model path is found, notify the user that the model will be automatically downloaded
     print(
@@ -178,9 +180,13 @@ def initialize_landiff_model_path():
 
     print(f"Model downloaded to {download_path}, performing hash verification...")
 
-    # Verify the downloaded model with hash checksum
-    if verify_md5_checksum(download_path):
-        print("Model hash verification successful!")
+    # Verify the downloaded model with hash checksum, unless skipped
+    if skip_hash_verification or verify_md5_checksum(download_path):
+        if skip_hash_verification:
+            print("Skipping model hash verification as requested.")
+        else:
+            print("Model hash verification successful!")
+        
         _LANDIFF_MODEL_PATH = download_path
 
         # Create a symbolic link to workspace_path
