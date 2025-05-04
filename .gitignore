@@ -176,3 +176,4 @@ cython_debug/
 # Ignore everything in ckpts folder
 ckpts/*
 !ckpts/README.md
+!ckpts/CHECKSUM.md5
